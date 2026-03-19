@@ -4,17 +4,12 @@
 
 services:
   link-notifier:
-    image: ghcr.io/danielmichaels/cap-link-notifier:latest
+    image: 'ghcr.io/danielmichaels/cap-link-notifier:latest'
     restart: unless-stopped
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
-
-      # Discovery: matches the cap-web service in this compose file.
-      # If in the same compose project, label-based discovery works:
-      SERVICE_VALUE: cap-web
-
-      # If Coolify isolates services, use name prefix instead:
-      CONTAINER_NAME_PREFIX: cap-web
+      - 'TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}'
+      - 'TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}'
+      - SERVICE_VALUE=cap-web
+      - CONTAINER_NAME_PREFIX=cap-web
