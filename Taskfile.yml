@@ -1,0 +1,78 @@
+version: "3"
+
+vars:
+  BINARY: cap-link-notifier
+  IMAGE: cap-link-notifier
+
+dotenv: [".env"]
+
+tasks:
+  build:
+    desc: Build the release binary locally
+    cmds:
+      - cargo build --release
+    sources:
+      - src/**/*.rs
+      - Cargo.toml
+    generates:
+      - target/release/{{.BINARY}}
+
+  run:
+    desc: Run locally (requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env)
+    deps: [build]
+    cmds:
+      - ./target/release/{{.BINARY}}
+
+  run:debug:
+    desc: Run with debug logging
+    deps: [build]
+    env:
+      RUST_LOG: cap_link_notifier=debug
+    cmds:
+      - ./target/release/{{.BINARY}}
+
+  docker:build:
+    desc: Build the Docker image
+    cmds:
+      - docker build -t {{.IMAGE}}:latest .
+
+  docker:run:
+    desc: Run the notifier container standalone (for testing)
+    deps: [docker:build]
+    cmds:
+      - |
+        docker run --rm -it \
+          -v /var/run/docker.sock:/var/run/docker.sock:ro \
+          -e TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} \
+          -e TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID} \
+          -e SERVICE_VALUE=${CAP_SERVICE_NAME:-cap} \
+          -e RUST_LOG=cap_link_notifier=info \
+          {{.IMAGE}}:latest
+
+  inspect:
+    desc: Show running containers with compose labels (find your Cap service name)
+    cmds:
+      - docker ps --filter "label=com.docker.compose.service" --format "table {{.Names}}\t{{.Labels}}" | head -20
+
+  logs:preview:
+    desc: Tail the Cap container logs to see the login link format
+    vars:
+      CONTAINER:
+        sh: docker ps --filter "label=com.docker.compose.service=cap" --format "{{.Names}}" | head -1
+    cmds:
+      - docker logs -f {{.CONTAINER}} 2>&1 | grep -iE "login|auth|magic|verify|callback|token|http"
+
+  fmt:
+    desc: Format code
+    cmds:
+      - cargo fmt
+
+  clippy:
+    desc: Run clippy lints
+    cmds:
+      - cargo clippy -- -W clippy::all
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean

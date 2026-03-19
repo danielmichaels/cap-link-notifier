@@ -1,0 +1,38 @@
+[package]
+name = "cap-link-notifier"
+version = "0.1.0"
+edition = "2021"
+description = "Sidecar that captures Cap magic login links from container logs and forwards to Telegram"
+
+[dependencies]
+# Docker API client - the go-to crate for Docker in Rust
+bollard = "0.20.2"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Streaming combinators for the log stream
+futures-util = "0.3"
+
+# HTTP client for Telegram API
+reqwest = { version = "0.13.2", default-features = false, features = ["rustls", "json", "form"] }
+
+# Regex for matching login links
+regex = "1"
+
+# Serialization for Telegram API payloads
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Structured logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling without the boilerplate
+anyhow = "1"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"  # Optimize for size - this is a tiny sidecar
