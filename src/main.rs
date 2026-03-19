@@ -359,7 +359,11 @@ impl LogScanner {
         }
 
         for mat in self.link_pattern.find_iter(line) {
-            captures.push(Capture::LoginLink(mat.as_str().to_string()));
+            let url = mat.as_str();
+            if url.contains("next-auth.js.org") || url.contains("nextjs.org") {
+                continue;
+            }
+            captures.push(Capture::LoginLink(url.to_string()));
         }
 
         captures
@@ -525,5 +529,12 @@ mod tests {
             }
             _ => panic!("expected VerificationCode"),
         }
+    }
+
+    #[test]
+    fn filters_next_auth_debug_urls() {
+        let mut s = scanner();
+        let caps = s.feed("https://next-auth.js.org/warnings#debug_enabled");
+        assert!(caps.is_empty());
     }
 }
